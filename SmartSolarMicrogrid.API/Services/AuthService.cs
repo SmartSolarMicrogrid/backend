@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using SmartSolarMicrogrid.API.Auth;
 using SmartSolarMicrogrid.API.DTOs.Auth;
+using SmartSolarMicrogrid.API.DTOs.Prosumer;
 using SmartSolarMicrogrid.API.Models;
 using SmartSolarMicrogrid.API.Repositories.Interfaces;
 using SmartSolarMicrogrid.API.Services.Interfaces;
@@ -11,16 +13,19 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository     _userRepo;
     private readonly IProsumerRepository _prosumerRepo;
+    private readonly IProsumerService    _prosumerService;
     private readonly JwtTokenGenerator   _jwtGenerator;
 
     public AuthService(
         IUserRepository     userRepo,
         IProsumerRepository prosumerRepo,
+        IProsumerService    prosumerService,
         JwtTokenGenerator   jwtGenerator)
     {
-        _userRepo     = userRepo;
-        _prosumerRepo = prosumerRepo;
-        _jwtGenerator = jwtGenerator;
+        _userRepo        = userRepo;
+        _prosumerRepo    = prosumerRepo;
+        _prosumerService = prosumerService;
+        _jwtGenerator    = jwtGenerator;
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
@@ -77,6 +82,77 @@ public class AuthService : IAuthService
         }
 
         throw new UnauthorizedException("Invalid email or password.");
+    }
+
+    public async Task<ProsumerDto> RegisterAsync(ProsumerRegisterDto request) =>
+        await _prosumerService.RegisterAsync(request);
+
+    public async Task<CurrentUserDto> GetCurrentUserAsync(ClaimsPrincipal userPrincipal)
+    {
+        var userId = userPrincipal.FindFirstValue(ClaimTypes.NameIdentifier)
+                  ?? userPrincipal.FindFirstValue("sub")
+                  ?? throw new UnauthorizedAccessException("User identifier not found in token.");
+
+        var role = userPrincipal.FindFirstValue(ClaimTypes.Role)
+                ?? userPrincipal.FindFirstValue("role")
+                ?? string.Empty;
+
+        if (role == RoleConstants.Prosumer)
+        {
+            var prosumer = await _prosumerRepo.GetByIdAsync(userId)
+                        ?? await _prosumerRepo.GetByNICAsync(userId)
+                        ?? throw new NotFoundException("Prosumer", userId);
+
+            return new CurrentUserDto
+            {
+                Id           = prosumer.Id,
+                Email        = prosumer.Email,
+                Name         = prosumer.FullName,
+                Role         = RoleConstants.Prosumer,
+                NIC          = prosumer.NIC,
+                Phone        = prosumer.Phone,
+                Address      = prosumer.Address,
+                Status       = prosumer.Status,
+                IsActive     = prosumer.Status == ProsumerStatus.Active,
+                RegisteredAt = prosumer.RegisteredAt
+            };
+        }
+
+        var user = await _userRepo.GetByIdAsync(userId);
+        if (user is not null)
+        {
+            return new CurrentUserDto
+            {
+                Id           = user.Id,
+                Email        = user.Email,
+                Name         = user.Name,
+                Role         = user.Role,
+                Status       = user.IsActive ? "Active" : "Inactive",
+                IsActive     = user.IsActive,
+                RegisteredAt = user.CreatedAt
+            };
+        }
+
+        var pFallback = await _prosumerRepo.GetByIdAsync(userId)
+                     ?? await _prosumerRepo.GetByNICAsync(userId);
+        if (pFallback is not null)
+        {
+            return new CurrentUserDto
+            {
+                Id           = pFallback.Id,
+                Email        = pFallback.Email,
+                Name         = pFallback.FullName,
+                Role         = RoleConstants.Prosumer,
+                NIC          = pFallback.NIC,
+                Phone        = pFallback.Phone,
+                Address      = pFallback.Address,
+                Status       = pFallback.Status,
+                IsActive     = pFallback.Status == ProsumerStatus.Active,
+                RegisteredAt = pFallback.RegisteredAt
+            };
+        }
+
+        throw new NotFoundException("User", userId);
     }
 
     private static string GetRedirectPath(string role) => role switch

@@ -53,6 +53,20 @@ public static class DependencyInjection
 
         services.AddAuthorization();
 
+        // ── Rate Limiting ────────────────────────────────────────────
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy("login", httpContext =>
+                System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 5,
+                        Window = TimeSpan.FromMinutes(1)
+                    }));
+        });
+
         // ── Repositories ─────────────────────────────────────────────
         services.AddScoped<IUserRepository,     UserRepository>();
         services.AddScoped<IProsumerRepository, ProsumerRepository>();
