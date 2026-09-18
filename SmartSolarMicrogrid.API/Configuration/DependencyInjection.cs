@@ -26,6 +26,9 @@ public static class DependencyInjection
 
         services.AddSingleton(mongoSettings);
         services.AddSingleton<MongoDbContext>();
+        services.AddSingleton<ITransactionRunner, MongoTransactionRunner>();
+        services.AddSingleton<IndexInitializer>();
+        services.AddHealthChecks().AddCheck<MongoHealthCheck>("mongodb");
 
         // ── JWT ──────────────────────────────────────────────────────
         var jwtSettings = configuration

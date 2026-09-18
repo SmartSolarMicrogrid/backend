@@ -51,6 +51,8 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
     await DatabaseSeeder.SeedAsync(dbContext);
+    var indexInitializer = scope.ServiceProvider.GetRequiredService<IndexInitializer>();
+    await indexInitializer.RunAsync();
 }
 
 // ── Middleware pipeline ───────────────────────────────────────────────
@@ -67,6 +69,7 @@ app.UseCors("AllowWebApp");
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
+app.MapHealthChecks("/health").AllowAnonymous();
 app.MapControllers();
 
 app.Run();

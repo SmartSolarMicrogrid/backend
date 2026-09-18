@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using FluentValidation;
+using SmartSolarMicrogrid.API.Common.Errors;
 using SmartSolarMicrogrid.API.Utilities.Exceptions;
 
 namespace SmartSolarMicrogrid.API.Middleware;
@@ -12,7 +13,7 @@ public class ExceptionHandlingMiddleware
 
     public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
     {
-        _next   = next;
+        _next = next;
         _logger = logger;
     }
 
@@ -30,29 +31,79 @@ public class ExceptionHandlingMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        _logger.LogError(exception, "Unhandled exception: {Message}", exception.Message);
+        int statusCode;
+        string title;
+        string detail;
+        string code;
 
-        var (statusCode, title, detail) = exception switch
+        if (exception is DomainException domainEx)
         {
-            NotFoundException      e => (HttpStatusCode.NotFound,                 "Not Found",              e.Message),
-            UnauthorizedException  e => (HttpStatusCode.Unauthorized,             "Unauthorized",           e.Message),
-            ConflictException      e => (HttpStatusCode.Conflict,                 "Conflict",               e.Message),
-            BusinessRuleException  e => (HttpStatusCode.UnprocessableEntity,      "Business Rule Violated", e.Message),
-            ValidationException    e => (HttpStatusCode.BadRequest,               "Validation Failed",      string.Join("; ", e.Errors.Select(x => x.ErrorMessage))),
-            _                        => (HttpStatusCode.InternalServerError,      "Server Error",           "An unexpected error occurred.")
+            code = domainEx.Code;
+            var entry = ErrorCatalog.Get(code);
+            statusCode = entry.Status;
+            title = entry.Title;
+            detail = domainEx.Message;
+        }
+        else if (exception is ValidationException valEx)
+        {
+            code = ErrorCodes.ValidationFailed;
+            statusCode = (int)HttpStatusCode.BadRequest;
+            title = "Validation failed";
+            detail = string.Join("; ", valEx.Errors.Select(x => x.ErrorMessage));
+        }
+        else if (exception is NotFoundException notFoundEx)
+        {
+            code = ErrorCodes.NotFound;
+            statusCode = (int)HttpStatusCode.NotFound;
+            title = "Not found";
+            detail = notFoundEx.Message;
+        }
+        else if (exception is ConflictException conflictEx)
+        {
+            code = conflictEx.Message.Contains("NIC", StringComparison.OrdinalIgnoreCase) ? ErrorCodes.NicExists : ErrorCodes.EmailExists;
+            statusCode = (int)HttpStatusCode.Conflict;
+            title = "Conflict";
+            detail = conflictEx.Message;
+        }
+        else if (exception is UnauthorizedException unauthEx)
+        {
+            code = ErrorCodes.InvalidCredentials;
+            statusCode = (int)HttpStatusCode.Unauthorized;
+            title = "Sign-in failed";
+            detail = unauthEx.Message;
+        }
+        else if (exception is BusinessRuleException ruleEx)
+        {
+            code = ErrorCodes.InvalidState;
+            statusCode = (int)HttpStatusCode.UnprocessableEntity;
+            title = "Business rule violated";
+            detail = ruleEx.Message;
+        }
+        else
+        {
+            _logger.LogError(exception, "Unhandled exception on {Path}", context.Request.Path);
+            code = ErrorCodes.InternalError;
+            statusCode = (int)HttpStatusCode.InternalServerError;
+            title = "Unexpected error";
+            detail = "Something went wrong. Quote the trace ID when you report it.";
+        }
+
+        context.Response.ContentType = "application/problem+json";
+        context.Response.StatusCode = statusCode;
+
+        var traceId = context.TraceIdentifier;
+        var problem = new
+        {
+            type = $"/errors/{code.ToLowerInvariant().Replace('_', '-')}",
+            title,
+            status = statusCode,
+            detail,
+            instance = context.Request.Path.Value,
+            code,
+            traceId
         };
 
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode  = (int)statusCode;
-
-        var body = JsonSerializer.Serialize(new
-        {
-            status = (int)statusCode,
-            title,
-            detail,
-            traceId = context.TraceIdentifier,
-        });
-
-        await context.Response.WriteAsync(body);
+        var json = JsonSerializer.Serialize(problem, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        await context.Response.WriteAsync(json);
     }
 }
