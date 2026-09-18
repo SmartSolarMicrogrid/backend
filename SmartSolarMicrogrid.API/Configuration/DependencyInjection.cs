@@ -71,20 +71,28 @@ public static class DependencyInjection
         });
 
         // ── Repositories ─────────────────────────────────────────────
-        services.AddScoped<IUserRepository,     UserRepository>();
-        services.AddScoped<IProsumerRepository, ProsumerRepository>();
-        services.AddScoped<INodeRepository,     NodeRepository>();
-        services.AddScoped<ISlotRepository,     SlotRepository>();
+        services.AddScoped<IUserRepository,        UserRepository>();
+        services.AddScoped<IProsumerRepository,    ProsumerRepository>();
+        services.AddScoped<INodeRepository,        NodeRepository>();
+        services.AddScoped<ISlotRepository,        SlotRepository>();
+        services.AddScoped<IReservationRepository, ReservationRepository>();
+
+        // ── Policies & Strategies ────────────────────────────────────
+        services.AddSingleton<Services.Policies.ReservationPolicy>();
+        services.AddSingleton<Services.Pricing.ITradePricing, Services.Pricing.ExportPricing>();
+        services.AddSingleton<Services.Pricing.ITradePricing, Services.Pricing.ImportPricing>();
 
         // ── Services ─────────────────────────────────────────────────
-        services.AddScoped<IAuthService,     AuthService>();
-        services.AddScoped<IUserService,     UserService>();
-        services.AddScoped<IProsumerService, ProsumerService>();
-        services.AddScoped<INodeService,     NodeService>();
-        services.AddScoped<ISlotService,     SlotService>();
+        services.AddScoped<IAuthService,        AuthService>();
+        services.AddScoped<IUserService,        UserService>();
+        services.AddScoped<IProsumerService,    ProsumerService>();
+        services.AddScoped<INodeService,        NodeService>();
+        services.AddScoped<ISlotService,        SlotService>();
+        services.AddScoped<IReservationService, ReservationService>();
 
         // ── Background Workers ───────────────────────────────────────
         services.AddHostedService<Workers.SlotGenerationWorker>();
+        services.AddHostedService<Workers.ReservationExpiryWorker>();
 
         // ── FluentValidation ─────────────────────────────────────────
         services.AddFluentValidationAutoValidation();
