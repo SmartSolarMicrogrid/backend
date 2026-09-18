@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "Zj4Cyru8gWcDlpGoX70RAawbzYrRVJY8Wz5KI017JKg=",
+  "Source": "SmartSolarMicrogrid.API",
+  "BasePath": "_content/SmartSolarMicrogrid.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

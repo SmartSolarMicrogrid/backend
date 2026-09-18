@@ -1,0 +1,1 @@
+﻿// DashboardSummaryDto.cs - DTO

@@ -1,0 +1,1 @@
+﻿// IEnergyTransferService - Service interface

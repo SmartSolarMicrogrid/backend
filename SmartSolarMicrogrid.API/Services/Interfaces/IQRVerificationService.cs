@@ -1,0 +1,1 @@
+﻿// IQRVerificationService - Service interface

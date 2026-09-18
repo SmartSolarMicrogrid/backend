@@ -1,0 +1,1 @@
+﻿// EnergyTransferController.cs - Controller placeholder

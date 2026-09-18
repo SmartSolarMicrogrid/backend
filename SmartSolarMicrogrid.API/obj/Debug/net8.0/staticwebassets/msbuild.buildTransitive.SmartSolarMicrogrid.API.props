@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\SmartSolarMicrogrid.API.props" />
+</Project>

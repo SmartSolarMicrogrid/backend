@@ -1,0 +1,1 @@
+﻿// IBookingSlotService - Service interface

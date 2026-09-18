@@ -1,0 +1,1 @@
+﻿// QRValidateRequestDto.cs - DTO

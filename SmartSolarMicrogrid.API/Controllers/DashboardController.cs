@@ -1,0 +1,1 @@
+﻿// DashboardController.cs - Controller placeholder

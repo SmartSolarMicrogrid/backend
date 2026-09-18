@@ -1,0 +1,1 @@
+﻿// TransferResponseDto.cs - DTO

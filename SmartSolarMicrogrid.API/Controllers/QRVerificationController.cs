@@ -1,0 +1,1 @@
+﻿// QRVerificationController.cs - Controller placeholder

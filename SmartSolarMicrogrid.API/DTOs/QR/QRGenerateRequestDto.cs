@@ -1,0 +1,1 @@
+﻿// QRGenerateRequestDto.cs - DTO

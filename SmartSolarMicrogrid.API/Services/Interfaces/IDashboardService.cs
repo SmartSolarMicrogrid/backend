@@ -1,0 +1,1 @@
+﻿// IDashboardService - Service interface

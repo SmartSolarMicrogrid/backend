@@ -1,0 +1,1 @@
+﻿// CreateBookingSlotDto.cs - DTO

@@ -1,0 +1,1 @@
+﻿// IMicrogridNodeRepository - Repository interface

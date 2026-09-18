@@ -1,0 +1,1 @@
+﻿// EnergyTransferService - Service implementation

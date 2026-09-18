@@ -1,0 +1,1 @@
+﻿// QRVerificationService - Service implementation

@@ -1,0 +1,80 @@
+using System.Text;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using SmartSolarMicrogrid.API.Auth;
+using SmartSolarMicrogrid.API.Data;
+using SmartSolarMicrogrid.API.Repositories;
+using SmartSolarMicrogrid.API.Repositories.Interfaces;
+using SmartSolarMicrogrid.API.Services;
+using SmartSolarMicrogrid.API.Services.Interfaces;
+using SmartSolarMicrogrid.API.Validators;
+
+namespace SmartSolarMicrogrid.API.Configuration;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddApplicationServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // ── MongoDB ─────────────────────────────────────────────────
+        var mongoSettings = configuration
+            .GetSection("MongoDbSettings")
+            .Get<MongoDbSettings>()!;
+
+        services.AddSingleton(mongoSettings);
+        services.AddSingleton<MongoDbContext>();
+
+        // ── JWT ──────────────────────────────────────────────────────
+        var jwtSettings = configuration
+            .GetSection("JwtSettings")
+            .Get<JwtSettings>()!;
+
+        services.AddSingleton(jwtSettings);
+        services.AddSingleton<JwtTokenGenerator>();
+
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer           = true,
+                    ValidateAudience         = true,
+                    ValidateLifetime         = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer              = jwtSettings.Issuer,
+                    ValidAudience            = jwtSettings.Audience,
+                    IssuerSigningKey         = new SymmetricSecurityKey(
+                                                  Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+                };
+            });
+
+        services.AddAuthorization();
+
+        // ── Repositories ─────────────────────────────────────────────
+        services.AddScoped<IUserRepository,     UserRepository>();
+        services.AddScoped<IProsumerRepository, ProsumerRepository>();
+
+        // ── Services ─────────────────────────────────────────────────
+        services.AddScoped<IAuthService,     AuthService>();
+        services.AddScoped<IUserService,     UserService>();
+        services.AddScoped<IProsumerService, ProsumerService>();
+
+        // ── FluentValidation ─────────────────────────────────────────
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+
+        // ── CORS ─────────────────────────────────────────────────────
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowWebApp", policy =>
+                policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod());
+        });
+
+        return services;
+    }
+}

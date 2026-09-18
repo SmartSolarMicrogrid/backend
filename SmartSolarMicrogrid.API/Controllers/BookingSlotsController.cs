@@ -1,0 +1,1 @@
+﻿// BookingSlotsController.cs - Controller placeholder
