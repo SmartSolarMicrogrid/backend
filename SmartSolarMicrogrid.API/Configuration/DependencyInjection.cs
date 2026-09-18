@@ -89,6 +89,10 @@ public static class DependencyInjection
         services.AddScoped<INodeService,        NodeService>();
         services.AddScoped<ISlotService,        SlotService>();
         services.AddScoped<IReservationService, ReservationService>();
+        services.AddSingleton<QrService>();
+        services.AddScoped<ITransferService,    TransferService>();
+        services.AddScoped<IDashboardService,   DashboardService>();
+        services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, NodeScopeHandler>();
 
         // ── Background Workers ───────────────────────────────────────
         services.AddHostedService<Workers.SlotGenerationWorker>();

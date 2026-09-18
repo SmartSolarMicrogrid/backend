@@ -1,1 +1,0 @@
-﻿// MicrogridNodesController.cs - Controller placeholder

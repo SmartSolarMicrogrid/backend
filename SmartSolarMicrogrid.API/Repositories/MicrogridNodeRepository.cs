@@ -1,1 +1,0 @@
-﻿// MicrogridNodeRepository - Repository implementation
