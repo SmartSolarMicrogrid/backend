@@ -73,11 +73,18 @@ public static class DependencyInjection
         // ── Repositories ─────────────────────────────────────────────
         services.AddScoped<IUserRepository,     UserRepository>();
         services.AddScoped<IProsumerRepository, ProsumerRepository>();
+        services.AddScoped<INodeRepository,     NodeRepository>();
+        services.AddScoped<ISlotRepository,     SlotRepository>();
 
         // ── Services ─────────────────────────────────────────────────
         services.AddScoped<IAuthService,     AuthService>();
         services.AddScoped<IUserService,     UserService>();
         services.AddScoped<IProsumerService, ProsumerService>();
+        services.AddScoped<INodeService,     NodeService>();
+        services.AddScoped<ISlotService,     SlotService>();
+
+        // ── Background Workers ───────────────────────────────────────
+        services.AddHostedService<Workers.SlotGenerationWorker>();
 
         // ── FluentValidation ─────────────────────────────────────────
         services.AddFluentValidationAutoValidation();
