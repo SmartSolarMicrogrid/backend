@@ -4,12 +4,12 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas%20%2F%20Local-green.svg)](https://www.mongodb.com/)
 [![Swagger](https://img.shields.io/badge/OpenAPI-Swagger%20UI-orange.svg)](http://localhost:5000/swagger)
 
-> **Enterprise Application Development (SE4040) — Assignment 1 (2026)**  
+
 > High-performance, modular RESTful Web API engineered with ASP.NET Core (.NET 8) and MongoDB for peer-to-microgrid renewable energy trading.
 
 ---
 
-## 📖 1. System Overview
+##  1. System Overview
 
 The **Smart Solar Microgrid Trading System (SSMTS)** is a decentralized energy management platform designed to balance solar energy supply and demand within localized smart microgrids.
 
@@ -27,7 +27,7 @@ The **Smart Solar Microgrid Trading System (SSMTS)** is a decentralized energy m
 
 ---
 
-## 🏛️ 2. Architectural Design & Tech Stack
+##  2. Architectural Design & Tech Stack
 
 The API is built as a **Modular Fat Web API** adhering strictly to the separation of concerns:
 ```text
@@ -55,11 +55,11 @@ Controller (HTTP & Routing)
 
 ---
 
-## 🧩 3. Modules & Complete API Contract (41 Endpoints)
+##  3. Modules & Complete API Contract (41 Endpoints)
 
 All REST endpoints reside under the `/api/v1` namespace (except `/health` which is a public probe):
 
-### 🔑 Module 1: Identity and Accounts (15 Endpoints)
+###  Module 1: Identity and Accounts (15 Endpoints)
 | Method | Route | Access | Purpose |
 |---|---|---|---|
 | `POST` | `/api/v1/auth/login` | Public (Rate-limited) | Sign-in for Prosumers and Staff; issues JWT token. |
@@ -78,7 +78,7 @@ All REST endpoints reside under the `/api/v1` namespace (except `/health` which 
 | `PATCH` | `/api/v1/prosumers/{nic}/deactivate` | Owner, Backoffice | Deactivate account (blocked if active bookings exist). |
 | `PATCH` | `/api/v1/prosumers/{nic}/reactivate` | Backoffice | Reactivate a deactivated prosumer account. |
 
-### ⚡ Module 2: Nodes and Slots (10 Endpoints)
+###  Module 2: Nodes and Slots (10 Endpoints)
 | Method | Route | Access | Purpose |
 |---|---|---|---|
 | `GET` | `/api/v1/nodes` | Authenticated | List all stations (Prosumers see Active stations only). |
@@ -92,7 +92,7 @@ All REST endpoints reside under the `/api/v1` namespace (except `/health` which 
 | `POST` | `/api/v1/nodes/{id}/slots/generate` | Backoffice | Trigger manual slot generation across a date range. |
 | `PATCH` | `/api/v1/slots/{id}` | Grid Operator, Backoffice | Update bay capacity or block an empty slot. |
 
-### 📅 Module 3: Energy Reservations (9 Endpoints)
+###  Module 3: Energy Reservations (9 Endpoints)
 | Method | Route | Access | Purpose |
 |---|---|---|---|
 | `POST` | `/api/v1/reservations` | Prosumer, Backoffice | Reserve an energy transfer bay in an available slot. |
@@ -105,7 +105,7 @@ All REST endpoints reside under the `/api/v1` namespace (except `/health` which 
 | `PATCH` | `/api/v1/reservations/{id}/reject` | Grid Operator, Backoffice | Reject booking with reason and release bay. |
 | `GET` | `/api/v1/dashboard/prosumer` | Prosumer | Personal dashboard: active bookings, net earnings, energy stats. |
 
-### 📲 Module 4: QR, Transfers & Dashboards (7 Endpoints)
+###  Module 4: QR, Transfers & Dashboards (7 Endpoints)
 | Method | Route | Access | Purpose |
 |---|---|---|---|
 | `GET` | `/api/v1/reservations/{id}/qr` | Owner | Retrieve signed HMAC-SHA256 QR payload and backup code. |
@@ -118,7 +118,7 @@ All REST endpoints reside under the `/api/v1` namespace (except `/health` which 
 
 ---
 
-## ⚖️ 4. Business Rules Enforced in Code
+##  4. Business Rules Enforced in Code
 
 | Rule | Location | Description & Enforcement |
 |---|---|---|
@@ -140,7 +140,7 @@ All REST endpoints reside under the `/api/v1` namespace (except `/health` which 
 
 ---
 
-## ⚙️ 5. Getting Started & Setup Guide
+##  5. Getting Started & Setup Guide
 
 ### Prerequisites
 * [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or higher.
@@ -181,7 +181,7 @@ All REST endpoints reside under the `/api/v1` namespace (except `/health` which 
 
 ---
 
-## 👤 6. Default Seeded Accounts
+##  6. Default Seeded Accounts
 
 On initial startup, the database seeder automatically initializes the default Backoffice administrator if the database is empty:
 
@@ -191,7 +191,7 @@ On initial startup, the database seeder automatically initializes the default Ba
 
 ---
 
-## 🧪 7. Quick Testing Walkthrough (Swagger / Postman)
+##  7. Quick Testing Walkthrough (Swagger / Postman)
 
 1. **Authenticate:**
    * Call `POST /api/v1/auth/login` with `admin@solarmicrogrid.com` and `Admin@1234`.
@@ -211,7 +211,7 @@ On initial startup, the database seeder automatically initializes the default Ba
 
 ---
 
-## 📁 8. Project Structure
+##  8. Project Structure
 
 ```text
 backend/
