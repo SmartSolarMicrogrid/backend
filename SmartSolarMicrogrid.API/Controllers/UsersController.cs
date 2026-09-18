@@ -9,6 +9,7 @@ using SmartSolarMicrogrid.API.Services.Interfaces;
 namespace SmartSolarMicrogrid.API.Controllers;
 
 [ApiController]
+[Route("api/v1/users")]
 [Route("api/users")]
 [Authorize]
 public class UsersController : ControllerBase
@@ -73,6 +74,17 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> Update(string id, [FromBody] UpdateUserDto request)
     {
         var user = await _userService.UpdateUserAsync(id, request);
+        return Ok(user);
+    }
+
+    /// <summary>Set a user's active status — Backoffice only.</summary>
+    [HttpPatch("{id}/status")]
+    [Authorize(Roles = RoleConstants.Backoffice)]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetStatus(string id, [FromBody] UserStatusUpdateDto request)
+    {
+        var user = await _userService.SetStatusAsync(id, request.IsActive);
         return Ok(user);
     }
 

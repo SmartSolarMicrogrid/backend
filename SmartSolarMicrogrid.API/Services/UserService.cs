@@ -65,6 +65,18 @@ public class UserService : IUserService
         return ToDto(user);
     }
 
+    public async Task<UserDto> SetStatusAsync(string id, bool isActive)
+    {
+        var user = await _repo.GetByIdAsync(id)
+            ?? throw new NotFoundException("User", id);
+
+        user.IsActive  = isActive;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _repo.UpdateAsync(id, user);
+        return ToDto(user);
+    }
+
     public async Task DeleteUserAsync(string id)
     {
         var user = await _repo.GetByIdAsync(id)
