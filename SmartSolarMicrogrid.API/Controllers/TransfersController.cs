@@ -21,7 +21,6 @@ public class TransfersController : ControllerBase
 
     /// <summary>Get QR code signature payload and backup code for an approved reservation — Owner only.</summary>
     [HttpGet("api/v1/reservations/{id}/qr")]
-    [HttpGet("api/reservations/{id}/qr")]
     [Authorize(Roles = RoleConstants.Prosumer)]
     [ProducesResponseType(typeof(QrResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -36,7 +35,6 @@ public class TransfersController : ControllerBase
 
     /// <summary>Scan and verify QR code or backup code — Grid Operator only (BR-11, BR-12).</summary>
     [HttpPost("api/v1/transfers/verify")]
-    [HttpPost("api/transfers/verify")]
     [Authorize(Roles = RoleConstants.GridOperator)]
     [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -52,7 +50,6 @@ public class TransfersController : ControllerBase
 
     /// <summary>Finalize energy transfer with meter readings — Grid Operator assigned node (BR-13).</summary>
     [HttpPost("api/v1/transfers/{reservationId}/finalize")]
-    [HttpPost("api/transfers/{reservationId}/finalize")]
     [Authorize(Roles = RoleConstants.GridOperator)]
     [ProducesResponseType(typeof(ReservationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -69,7 +66,6 @@ public class TransfersController : ControllerBase
 
     /// <summary>List completed energy transfer transactions — Backoffice and Grid Operator.</summary>
     [HttpGet("api/v1/transfers")]
-    [HttpGet("api/transfers")]
     [Authorize(Roles = $"{RoleConstants.Backoffice},{RoleConstants.GridOperator}")]
     [ProducesResponseType(typeof(List<TransferRecordDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> List(

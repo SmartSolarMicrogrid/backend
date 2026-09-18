@@ -9,7 +9,6 @@ namespace SmartSolarMicrogrid.API.Controllers;
 
 [ApiController]
 [Route("api/v1/prosumers")]
-[Route("api/prosumers")]
 public class ProsumersController : ControllerBase
 {
     private readonly IProsumerService _prosumerService;

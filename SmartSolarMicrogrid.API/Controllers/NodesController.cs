@@ -9,7 +9,6 @@ namespace SmartSolarMicrogrid.API.Controllers;
 
 [ApiController]
 [Route("api/v1/nodes")]
-[Route("api/nodes")]
 [Authorize]
 public class NodesController : ControllerBase
 {

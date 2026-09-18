@@ -21,7 +21,6 @@ public class SlotsController : ControllerBase
 
     /// <summary>List booking slots for a node on a specific local date.</summary>
     [HttpGet("api/v1/nodes/{id}/slots")]
-    [HttpGet("api/nodes/{id}/slots")]
     [ProducesResponseType(typeof(List<SlotResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ListForDay(
@@ -42,7 +41,6 @@ public class SlotsController : ControllerBase
 
     /// <summary>Generate booking slots for a node over a date range — Backoffice only.</summary>
     [HttpPost("api/v1/nodes/{id}/slots/generate")]
-    [HttpPost("api/nodes/{id}/slots/generate")]
     [Authorize(Roles = RoleConstants.Backoffice)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -57,7 +55,6 @@ public class SlotsController : ControllerBase
 
     /// <summary>Update slot capacity or availability status — Grid Operator or Backoffice.</summary>
     [HttpPatch("api/v1/slots/{id}")]
-    [HttpPatch("api/slots/{id}")]
     [Authorize(Roles = $"{RoleConstants.Backoffice},{RoleConstants.GridOperator}")]
     [ProducesResponseType(typeof(SlotResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

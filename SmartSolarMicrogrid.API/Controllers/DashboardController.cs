@@ -9,7 +9,6 @@ namespace SmartSolarMicrogrid.API.Controllers;
 
 [ApiController]
 [Route("api/v1/dashboard")]
-[Route("api/dashboard")]
 [Authorize]
 public class DashboardController : ControllerBase
 {

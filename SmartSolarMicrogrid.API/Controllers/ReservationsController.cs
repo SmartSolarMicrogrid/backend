@@ -9,7 +9,6 @@ namespace SmartSolarMicrogrid.API.Controllers;
 
 [ApiController]
 [Route("api/v1/reservations")]
-[Route("api/reservations")]
 [Authorize]
 public class ReservationsController : ControllerBase
 {

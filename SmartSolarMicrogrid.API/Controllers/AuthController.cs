@@ -9,7 +9,6 @@ namespace SmartSolarMicrogrid.API.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
-[Route("api/auth")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
