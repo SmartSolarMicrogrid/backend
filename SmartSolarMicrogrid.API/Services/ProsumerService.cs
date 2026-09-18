@@ -39,6 +39,34 @@ public class ProsumerService : IProsumerService
         return ToDto(prosumer);
     }
 
+    public async Task<ProsumerDto> CreateByBackofficeAsync(CreateProsumerDto request)
+    {
+        if (await _repo.NICExistsAsync(request.NIC))
+            throw new ConflictException("NIC", request.NIC);
+
+        if (await _repo.EmailExistsAsync(request.Email))
+            throw new ConflictException("email", request.Email);
+
+        var status = string.IsNullOrWhiteSpace(request.Status) ? ProsumerStatus.Active : request.Status;
+        var now = DateTime.UtcNow;
+
+        var prosumer = new Prosumer
+        {
+            NIC          = request.NIC,
+            FullName     = request.FullName,
+            Email        = request.Email,
+            Phone        = request.Phone,
+            Address      = request.Address,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Status       = status,
+            RegisteredAt = now,
+            ActivatedAt  = status == ProsumerStatus.Active ? now : null
+        };
+
+        await _repo.CreateAsync(prosumer);
+        return ToDto(prosumer);
+    }
+
     public async Task<List<ProsumerDto>> GetAllAsync() =>
         (await _repo.GetAllAsync()).Select(ToDto).ToList();
 
@@ -49,6 +77,12 @@ public class ProsumerService : IProsumerService
     {
         var p = await _repo.GetByIdAsync(id)
             ?? throw new NotFoundException("Prosumer", id);
+        return ToDto(p);
+    }
+
+    public async Task<ProsumerDto> GetByNicOrIdAsync(string identifier)
+    {
+        var p = await FindEntityByNicOrIdAsync(identifier);
         return ToDto(p);
     }
 
@@ -64,6 +98,25 @@ public class ProsumerService : IProsumerService
 
         await _repo.UpdateAsync(id, p);
         return ToDto(p);
+    }
+
+    public async Task<ProsumerDto> UpdateByNicOrIdAsync(string identifier, ProsumerUpdateDto request)
+    {
+        var p = await FindEntityByNicOrIdAsync(identifier);
+
+        p.FullName  = request.FullName;
+        p.Phone     = request.Phone;
+        p.Address   = request.Address;
+        p.UpdatedAt = DateTime.UtcNow;
+
+        await _repo.UpdateAsync(p.Id, p);
+        return ToDto(p);
+    }
+
+    public async Task DeleteByNicOrIdAsync(string identifier)
+    {
+        var p = await FindEntityByNicOrIdAsync(identifier);
+        await _repo.DeleteAsync(p.Id);
     }
 
     public async Task ActivateAsync(string id)
@@ -89,6 +142,25 @@ public class ProsumerService : IProsumerService
         await _repo.UpdateAsync(id, p);
     }
 
+    public async Task DeactivateByNicOrIdAsync(string identifier)
+    {
+        var p = await FindEntityByNicOrIdAsync(identifier);
+        p.Status    = ProsumerStatus.Inactive;
+        p.UpdatedAt = DateTime.UtcNow;
+
+        await _repo.UpdateAsync(p.Id, p);
+    }
+
+    public async Task ReactivateByNicOrIdAsync(string identifier)
+    {
+        var p = await FindEntityByNicOrIdAsync(identifier);
+        p.Status      = ProsumerStatus.Active;
+        p.ActivatedAt ??= DateTime.UtcNow;
+        p.UpdatedAt   = DateTime.UtcNow;
+
+        await _repo.UpdateAsync(p.Id, p);
+    }
+
     public async Task RequestDeactivationAsync(string id)
     {
         var p = await _repo.GetByIdAsync(id)
@@ -101,6 +173,17 @@ public class ProsumerService : IProsumerService
         p.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(id, p);
+    }
+
+    private async Task<Prosumer> FindEntityByNicOrIdAsync(string identifier)
+    {
+        var prosumer = await _repo.GetByNICAsync(identifier);
+        if (prosumer is not null) return prosumer;
+
+        prosumer = await _repo.GetByIdAsync(identifier);
+        if (prosumer is not null) return prosumer;
+
+        throw new NotFoundException("Prosumer", identifier);
     }
 
     private static ProsumerDto ToDto(Prosumer p) => new()

@@ -11,6 +11,8 @@ public interface IProsumerRepository
     Task<List<Prosumer>> GetByStatusAsync(string status);
     Task CreateAsync(Prosumer prosumer);
     Task UpdateAsync(string id, Prosumer prosumer);
+    Task DeleteAsync(string id);
+    Task DeleteByNICAsync(string nic);
     Task<bool> NICExistsAsync(string nic);
     Task<bool> EmailExistsAsync(string email);
 }

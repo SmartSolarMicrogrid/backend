@@ -46,6 +46,12 @@ public class ProsumerRepository : IProsumerRepository
         await _prosumers.ReplaceOneAsync(p => p.Id == id, prosumer);
     }
 
+    public async Task DeleteAsync(string id) =>
+        await _prosumers.DeleteOneAsync(p => p.Id == id);
+
+    public async Task DeleteByNICAsync(string nic) =>
+        await _prosumers.DeleteOneAsync(p => p.NIC == nic.ToUpperInvariant());
+
     public async Task<bool> NICExistsAsync(string nic) =>
         await _prosumers.Find(p => p.NIC == nic.ToUpperInvariant()).AnyAsync();
 
