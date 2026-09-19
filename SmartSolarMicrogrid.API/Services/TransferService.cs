@@ -26,13 +26,25 @@ public class TransferService : ITransferService
         _policy = policy;
     }
 
+    private async Task<EnergyReservation> FindReservationAsync(string id, CancellationToken ct)
+    {
+        EnergyReservation? reservation = null;
+        if (ObjectId.TryParse(id, out var objectId))
+        {
+            reservation = await _reservationRepository.GetByIdAsync(objectId, ct);
+        }
+
+        if (reservation == null)
+        {
+            reservation = await _reservationRepository.GetByReservationNoAsync(id, ct);
+        }
+
+        return reservation ?? throw new DomainException(ErrorCodes.NotFound, "Reservation not found.");
+    }
+
     public async Task<QrResponseDto> GetQrAsync(string reservationId, string callerSub, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(reservationId, out var objectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid reservation ID.");
-
-        var reservation = await _reservationRepository.GetByIdAsync(objectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Reservation not found.");
+        var reservation = await FindReservationAsync(reservationId, ct);
 
         if (reservation.ProsumerNic != callerSub)
             throw new DomainException(ErrorCodes.NotOwner, "Only the reservation owner can retrieve the QR code.");
@@ -127,11 +139,7 @@ public class TransferService : ITransferService
 
     public async Task<ReservationResponse> FinalizeAsync(string reservationId, FinalizeTransferRequest request, string operatorSub, List<string>? operatorNodeIds, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(reservationId, out var objectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid reservation ID.");
-
-        var reservation = await _reservationRepository.GetByIdAsync(objectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Reservation not found.");
+        var reservation = await FindReservationAsync(reservationId, ct);
 
         // BR-11: Operator node check
         if (operatorNodeIds == null || !operatorNodeIds.Contains(reservation.NodeId.ToString()))

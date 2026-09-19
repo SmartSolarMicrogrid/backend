@@ -17,7 +17,14 @@ public class SlotGenerationWorker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("SlotGenerationWorker starting: running initial generation for next 7 days.");
-        await RunGenerationAsync(stoppingToken);
+        try
+        {
+            await RunGenerationAsync(stoppingToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Initial slot generation run failed.");
+        }
 
         while (!stoppingToken.IsCancellationRequested)
         {

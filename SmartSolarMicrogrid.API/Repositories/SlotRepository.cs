@@ -64,7 +64,17 @@ public class SlotRepository : ISlotRepository
             var filter = Builders<EnergyBookingSlot>.Filter.Eq(s => s.NodeId, slot.NodeId)
                        & Builders<EnergyBookingSlot>.Filter.Eq(s => s.StartUtc, slot.StartUtc);
 
-            var upsert = new ReplaceOneModel<EnergyBookingSlot>(filter, slot) { IsUpsert = true };
+            var update = Builders<EnergyBookingSlot>.Update
+                .SetOnInsert(s => s.NodeId, slot.NodeId)
+                .SetOnInsert(s => s.StartUtc, slot.StartUtc)
+                .SetOnInsert(s => s.EndUtc, slot.EndUtc)
+                .SetOnInsert(s => s.LocalDate, slot.LocalDate)
+                .SetOnInsert(s => s.Capacity, slot.Capacity)
+                .SetOnInsert(s => s.BookedCount, 0)
+                .SetOnInsert(s => s.Status, slot.Status)
+                .SetOnInsert(s => s.Version, 1);
+
+            var upsert = new UpdateOneModel<EnergyBookingSlot>(filter, update) { IsUpsert = true };
             writes.Add(upsert);
         }
 

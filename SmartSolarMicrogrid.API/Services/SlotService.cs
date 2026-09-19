@@ -21,16 +21,19 @@ public class SlotService : ISlotService
 
     public async Task<List<SlotResponseDto>> GetSlotsForDayAsync(string nodeId, string localDate, bool prosumerView = false, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(nodeId, out var nodeObjectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid node ID format.");
+        SolarStationInfo? node = null;
+        if (ObjectId.TryParse(nodeId, out var nodeObjectId))
+            node = await _nodeRepository.GetByIdAsync(nodeObjectId, ct);
 
-        var node = await _nodeRepository.GetByIdAsync(nodeObjectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Node not found.");
+        node ??= await _nodeRepository.GetByCodeAsync(nodeId, ct);
+
+        if (node == null)
+            throw new DomainException(ErrorCodes.NotFound, "Node not found.");
 
         if (prosumerView && node.Status != NodeStatus.Active)
             throw new DomainException(ErrorCodes.SlotUnavailable, "Node is not active.");
 
-        var slots = await _slotRepository.GetByNodeAndDayAsync(nodeObjectId, localDate, ct);
+        var slots = await _slotRepository.GetByNodeAndDayAsync(node.Id, localDate, ct);
 
         if (prosumerView)
         {
@@ -43,11 +46,14 @@ public class SlotService : ISlotService
 
     public async Task<int> GenerateSlotsForNodeAsync(string nodeId, string fromDate, string toDate, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(nodeId, out var nodeObjectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid node ID format.");
+        SolarStationInfo? node = null;
+        if (ObjectId.TryParse(nodeId, out var nodeObjectId))
+            node = await _nodeRepository.GetByIdAsync(nodeObjectId, ct);
 
-        var node = await _nodeRepository.GetByIdAsync(nodeObjectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Node not found.");
+        node ??= await _nodeRepository.GetByCodeAsync(nodeId, ct);
+
+        if (node == null)
+            throw new DomainException(ErrorCodes.NotFound, "Node not found.");
 
         if (!DateOnly.TryParse(fromDate, out var startDate) || !DateOnly.TryParse(toDate, out var endDate))
             throw new DomainException(ErrorCodes.ValidationFailed, "Invalid date format. Expected YYYY-MM-DD.");

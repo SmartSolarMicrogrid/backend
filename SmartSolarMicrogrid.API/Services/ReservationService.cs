@@ -51,11 +51,17 @@ public class ReservationService : IReservationService
         if (prosumer == null || prosumer.Status != ProsumerStatus.Active)
             throw new DomainException(ErrorCodes.AccountDeactivated, "Prosumer account is not active.");
 
-        if (!ObjectId.TryParse(request.NodeId, out var nodeObjectId) || !ObjectId.TryParse(request.SlotId, out var slotObjectId))
-            throw new DomainException(ErrorCodes.ValidationFailed, "Invalid NodeId or SlotId format.");
+        SolarStationInfo? node = null;
+        if (ObjectId.TryParse(request.NodeId, out var nodeObjectId))
+            node = await _nodeRepository.GetByIdAsync(nodeObjectId, ct);
 
-        var node = await _nodeRepository.GetByIdAsync(nodeObjectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Node not found.");
+        node ??= await _nodeRepository.GetByCodeAsync(request.NodeId, ct);
+
+        if (node == null)
+            throw new DomainException(ErrorCodes.NotFound, "Node not found.");
+
+        if (!ObjectId.TryParse(request.SlotId, out var slotObjectId))
+            throw new DomainException(ErrorCodes.ValidationFailed, "Invalid SlotId format.");
 
         // BR-07: Node must be active
         if (node.Status != NodeStatus.Active)
@@ -77,9 +83,10 @@ public class ReservationService : IReservationService
             throw new DomainException(bookError ?? ErrorCodes.BookingWindow, "Booking slot is outside the allowed booking window.");
 
         // BR-05: Check energy
-        var (energyValid, energyError) = _policy.CheckEnergy(request.RequestedKwh, node.MaxKwhPerReservation);
+        var effectiveMaxKwh = node.MaxKwhPerReservation > 0 ? node.MaxKwhPerReservation : 50m;
+        var (energyValid, energyError) = _policy.CheckEnergy(request.RequestedKwh, effectiveMaxKwh);
         if (!energyValid)
-            throw new DomainException(energyError ?? ErrorCodes.ValidationFailed, $"Requested energy must be between {_policy.MinKwh} and {node.MaxKwhPerReservation} kWh.");
+            throw new DomainException(energyError ?? ErrorCodes.ValidationFailed, $"Requested energy must be between {_policy.MinKwh} and {effectiveMaxKwh} kWh.");
 
         if (!Enum.TryParse<TradeType>(request.TradeType, true, out var tradeType))
             tradeType = TradeType.Export;
@@ -156,13 +163,25 @@ public class ReservationService : IReservationService
         return list.Select(MapToResponse).ToList();
     }
 
+    private async Task<EnergyReservation> FindReservationAsync(string id, CancellationToken ct)
+    {
+        EnergyReservation? reservation = null;
+        if (ObjectId.TryParse(id, out var objectId))
+        {
+            reservation = await _reservationRepository.GetByIdAsync(objectId, ct);
+        }
+
+        if (reservation == null)
+        {
+            reservation = await _reservationRepository.GetByReservationNoAsync(id, ct);
+        }
+
+        return reservation ?? throw new DomainException(ErrorCodes.NotFound, "Reservation not found.");
+    }
+
     public async Task<ReservationResponse> GetByIdAsync(string id, string callerSub, string callerRole, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(id, out var objectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid reservation ID.");
-
-        var reservation = await _reservationRepository.GetByIdAsync(objectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Reservation not found.");
+        var reservation = await FindReservationAsync(id, ct);
 
         var isOwner = reservation.ProsumerNic == callerSub;
         var isStaff = callerRole.Equals(RoleConstants.Backoffice, StringComparison.OrdinalIgnoreCase) ||
@@ -176,11 +195,7 @@ public class ReservationService : IReservationService
 
     public async Task<ReservationResponse> ModifyAsync(string id, ModifyReservationRequest request, string callerSub, string callerRole, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(id, out var objectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid reservation ID.");
-
-        var reservation = await _reservationRepository.GetByIdAsync(objectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Reservation not found.");
+        var reservation = await FindReservationAsync(id, ct);
 
         var isOwner = reservation.ProsumerNic == callerSub;
         var isBackoffice = callerRole.Equals(RoleConstants.Backoffice, StringComparison.OrdinalIgnoreCase);
@@ -260,11 +275,7 @@ public class ReservationService : IReservationService
 
     public async Task CancelAsync(string id, string callerSub, string callerRole, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(id, out var objectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid reservation ID.");
-
-        var reservation = await _reservationRepository.GetByIdAsync(objectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Reservation not found.");
+        var reservation = await FindReservationAsync(id, ct);
 
         var isOwner = reservation.ProsumerNic == callerSub;
         var isStaff = callerRole.Equals(RoleConstants.Backoffice, StringComparison.OrdinalIgnoreCase) ||
@@ -290,11 +301,7 @@ public class ReservationService : IReservationService
 
     public async Task<ReservationResponse> ApproveAsync(string id, string callerSub, string callerRole, List<string>? operatorNodeIds, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(id, out var objectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid reservation ID.");
-
-        var reservation = await _reservationRepository.GetByIdAsync(objectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Reservation not found.");
+        var reservation = await FindReservationAsync(id, ct);
 
         var isBackoffice = callerRole.Equals(RoleConstants.Backoffice, StringComparison.OrdinalIgnoreCase);
         if (!isBackoffice)
@@ -314,11 +321,7 @@ public class ReservationService : IReservationService
 
     public async Task<ReservationResponse> RejectAsync(string id, RejectReservationRequest request, string callerSub, string callerRole, List<string>? operatorNodeIds, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(id, out var objectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid reservation ID.");
-
-        var reservation = await _reservationRepository.GetByIdAsync(objectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Reservation not found.");
+        var reservation = await FindReservationAsync(id, ct);
 
         var isBackoffice = callerRole.Equals(RoleConstants.Backoffice, StringComparison.OrdinalIgnoreCase);
         if (!isBackoffice)

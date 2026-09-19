@@ -3,6 +3,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
 using SmartSolarMicrogrid.API.Auth;
 using SmartSolarMicrogrid.API.Data;
 using SmartSolarMicrogrid.API.Repositories;
@@ -26,6 +27,8 @@ public static class DependencyInjection
 
         services.AddSingleton(mongoSettings);
         services.AddSingleton<MongoDbContext>();
+        services.AddSingleton<IMongoClient>(sp => sp.GetRequiredService<MongoDbContext>().Client);
+        services.AddSingleton<IMongoDatabase>(sp => sp.GetRequiredService<MongoDbContext>().Database);
         services.AddSingleton<ITransactionRunner, MongoTransactionRunner>();
         services.AddSingleton<IndexInitializer>();
         services.AddHealthChecks().AddCheck<MongoHealthCheck>("mongodb");
@@ -106,7 +109,7 @@ public static class DependencyInjection
         services.AddCors(options =>
         {
             options.AddPolicy("AllowWebApp", policy =>
-                policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+                policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:5174")
                       .AllowAnyHeader()
                       .AllowAnyMethod());
         });

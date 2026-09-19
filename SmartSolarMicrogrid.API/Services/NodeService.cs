@@ -32,14 +32,25 @@ public class NodeService : INodeService
         return nodes.Select(MapToDto).ToList();
     }
 
+    private async Task<SolarStationInfo> FindNodeAsync(string id, CancellationToken ct)
+    {
+        SolarStationInfo? node = null;
+        if (ObjectId.TryParse(id, out var objectId))
+        {
+            node = await _nodeRepository.GetByIdAsync(objectId, ct);
+        }
+
+        if (node == null)
+        {
+            node = await _nodeRepository.GetByCodeAsync(id, ct);
+        }
+
+        return node ?? throw new DomainException(ErrorCodes.NotFound, $"Node '{id}' was not found.");
+    }
+
     public async Task<NodeResponseDto> GetByIdAsync(string id, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(id, out var objectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid node ID format.");
-
-        var node = await _nodeRepository.GetByIdAsync(objectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, $"Node '{id}' was not found.");
-
+        var node = await FindNodeAsync(id, ct);
         return MapToDto(node);
     }
 
@@ -80,11 +91,7 @@ public class NodeService : INodeService
 
     public async Task<NodeResponseDto> UpdateAsync(string id, UpdateNodeDto request, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(id, out var objectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid node ID format.");
-
-        var node = await _nodeRepository.GetByIdAsync(objectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, $"Node '{id}' was not found.");
+        var node = await FindNodeAsync(id, ct);
 
         node.Name = request.Name;
         node.Latitude = request.Latitude;
@@ -94,8 +101,11 @@ public class NodeService : INodeService
         node.OpeningHours.OpenTime = request.OpenTime;
         node.OpeningHours.CloseTime = request.CloseTime;
         node.OpeningHours.SlotDurationMinutes = request.SlotDurationMinutes > 0 ? request.SlotDurationMinutes : 60;
-        node.CapacityBays = request.CapacityBays;
-        node.MaxKwhPerReservation = request.MaxKwhPerReservation;
+        if (request.CapacityBays > 0) node.CapacityBays = request.CapacityBays;
+        if (request.MaxKwhPerReservation > 0)
+            node.MaxKwhPerReservation = request.MaxKwhPerReservation;
+        else if (node.MaxKwhPerReservation <= 0)
+            node.MaxKwhPerReservation = 50m;
         node.OperatorIds = request.OperatorIds ?? new List<string>();
 
         await _nodeRepository.UpdateAsync(node, ct);
@@ -104,15 +114,11 @@ public class NodeService : INodeService
 
     public async Task DeactivateAsync(string id, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(id, out var objectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid node ID format.");
-
-        var node = await _nodeRepository.GetByIdAsync(objectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, $"Node '{id}' was not found.");
+        var node = await FindNodeAsync(id, ct);
 
         // BR-06: Check active reservations whose slot has not ended
         var activeCount = await _context.Reservations.CountDocumentsAsync(
-            r => r.NodeId == objectId && r.IsActive && r.SlotEndUtc > DateTime.UtcNow, cancellationToken: ct);
+            r => r.NodeId == node.Id && r.IsActive && r.SlotEndUtc > DateTime.UtcNow, cancellationToken: ct);
 
         if (activeCount > 0)
             throw new DomainException(ErrorCodes.NodeHasActiveReservations, $"Cannot deactivate node: {activeCount} active reservation(s) exist.");
@@ -123,11 +129,7 @@ public class NodeService : INodeService
 
     public async Task ActivateAsync(string id, CancellationToken ct = default)
     {
-        if (!ObjectId.TryParse(id, out var objectId))
-            throw new DomainException(ErrorCodes.NotFound, "Invalid node ID format.");
-
-        var node = await _nodeRepository.GetByIdAsync(objectId, ct)
-            ?? throw new DomainException(ErrorCodes.NotFound, $"Node '{id}' was not found.");
+        var node = await FindNodeAsync(id, ct);
 
         node.Status = NodeStatus.Active;
         await _nodeRepository.UpdateAsync(node, ct);
