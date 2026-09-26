@@ -121,25 +121,23 @@ public class ProsumerService : IProsumerService
 
     public async Task ActivateAsync(string id)
     {
-        var p = await _repo.GetByIdAsync(id)
-            ?? throw new NotFoundException("Prosumer", id);
+        var p = await FindEntityByNicOrIdAsync(id);
 
         p.Status      = ProsumerStatus.Active;
         p.ActivatedAt = DateTime.UtcNow;
         p.UpdatedAt   = DateTime.UtcNow;
 
-        await _repo.UpdateAsync(id, p);
+        await _repo.UpdateAsync(p.Id, p);
     }
 
     public async Task DeactivateAsync(string id)
     {
-        var p = await _repo.GetByIdAsync(id)
-            ?? throw new NotFoundException("Prosumer", id);
+        var p = await FindEntityByNicOrIdAsync(id);
 
         p.Status    = ProsumerStatus.Inactive;
         p.UpdatedAt = DateTime.UtcNow;
 
-        await _repo.UpdateAsync(id, p);
+        await _repo.UpdateAsync(p.Id, p);
     }
 
     public async Task DeactivateByNicOrIdAsync(string identifier)

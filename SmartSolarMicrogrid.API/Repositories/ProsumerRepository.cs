@@ -21,8 +21,12 @@ public class ProsumerRepository : IProsumerRepository
         return await _prosumers.Find(p => p.Id == id).FirstOrDefaultAsync();
     }
 
-    public async Task<Prosumer?> GetByNICAsync(string nic) =>
-        await _prosumers.Find(p => p.NIC == nic.ToUpperInvariant()).FirstOrDefaultAsync();
+    public async Task<Prosumer?> GetByNICAsync(string nic)
+    {
+        var upper = nic.ToUpperInvariant();
+        var lower = nic.ToLowerInvariant();
+        return await _prosumers.Find(p => p.NIC == nic || p.NIC == upper || p.NIC == lower).FirstOrDefaultAsync();
+    }
 
     public async Task<Prosumer?> GetByEmailAsync(string email) =>
         await _prosumers.Find(p => p.Email == email.ToLowerInvariant()).FirstOrDefaultAsync();
