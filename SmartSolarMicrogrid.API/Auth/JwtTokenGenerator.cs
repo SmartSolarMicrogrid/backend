@@ -36,10 +36,13 @@ public class JwtTokenGenerator
     {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub,   prosumerId),
+            // NIC as subject: the service layer (reservations, dashboard, QR
+            // ownership) resolves prosumers by NIC from the sub claim.
+            new Claim(JwtRegisteredClaimNames.Sub,   nic),
             new Claim(JwtRegisteredClaimNames.Email, email),
             new Claim(ClaimTypes.Role,               RoleConstants.Prosumer),
             new Claim("nic",                         nic),
+            new Claim("prosumerId",                  prosumerId),
             new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),
         };
         return BuildToken(claims);
