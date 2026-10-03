@@ -13,7 +13,8 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
         Title   = "Smart Solar Microgrid API",
-        Version = "v1"
+        Version = "v1",
+        Description = "Central REST API for authentication, prosumer management, microgrid nodes, energy reservations, QR verification and energy transfer operations."
     });
 
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
