@@ -37,6 +37,17 @@ Controller (HTTP & Routing)
             ↳ MongoDB (Atlas / Replica Set)
 ```
 
+### Request Processing Flow
+
+All client requests are handled through the centralized Web API.
+
+1. **Controllers** receive HTTP requests and route them to the relevant application services.
+2. **Services** apply business rules, authorization checks, validation, and workflow decisions.
+3. **Repositories** handle MongoDB queries and persistence operations.
+4. **MongoDB** stores users, prosumers, nodes, slots, reservations, and transfer-related data.
+
+This separation keeps business logic inside the backend service and prevents client applications from directly accessing the database.
+
 * **Core Framework:** .NET 8 (C# 12)
 * **Database & Driver:** MongoDB with official `MongoDB.Driver 3.12`
   * **Transactions:** Multi-document ACID transactions via `IClientSessionHandle` (stopping double-bookings atomically).
